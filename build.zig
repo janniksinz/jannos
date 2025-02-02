@@ -9,9 +9,10 @@ pub fn build(b: *std.Build) void {
             .os_tag = .freestanding,
             .abi = .none,
         }),
-        .optimize = .Debug,
+        .optimize = .ReleaseSmall,
         .strip = false,
     });
+    exe.entry = .disabled;
 
     // linker script
     exe.setLinkerScript(b.path("src/kernel.ld"));
