@@ -1,3 +1,5 @@
+const std = @import("std");
+
 const bss = @extern([*]u8, .{ .name = "__bss" }); // variable defined in the linker script
 const bss_end = @extern([*]u8, .{ .name = "__bss_end" });
 const stack_top = @extern([*]u8, .{ .name = "__stack_top" });
@@ -7,7 +9,7 @@ export fn kernel_main() noreturn {
     @memset(bss[0..bss_len], 0);
 
     const hello = "Hello Kernel!\n";
-    for (hello) |c| _ = sbi(c, 0, 0, 0, 0, 0, 0, 1);
+    console.print("{s}", .{hello}) catch {};
 
     while (true) asm volatile ("wfi");
 }
@@ -28,6 +30,16 @@ const SbiRet = struct {
     err: usize,
     value: usize,
 };
+
+const console: std.io.AnyWriter = .{
+    .context = undefined,
+    .writeFn = write_fn,
+};
+
+fn write_fn(_: *const anyopaque, bytes: []const u8) !usize {
+    for (bytes) |b| _ = sbi(b, 0, 0, 0, 0, 0, 0, 1);
+    return bytes.len;
+}
 
 pub fn sbi(
     arg0: usize,
