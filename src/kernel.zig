@@ -11,7 +11,20 @@ export fn kernel_main() noreturn {
     const hello = "Hello Kernel!\n";
     console.print("{s}", .{hello}) catch {};
 
-    while (true) asm volatile ("wfi");
+    @panic("what do?");
+
+    //while (true) asm volatile ("wfi");
+}
+
+pub fn panic(
+    msg: []const u8,
+    error_return_trace: ?*std.builtin.StackTrace,
+    ret_addr: ?usize,
+) noreturn {
+    _ = error_return_trace;
+    _ = ret_addr;
+    console.print("PANIC: {s}\n", .{msg}) catch {};
+    while (true) asm volatile ("");
 }
 
 // .Naked = compiler do not generate unnecessary code before and after function (return)
