@@ -17,6 +17,7 @@ export fn kernel_main() noreturn {
     while (true) asm volatile ("wfi");
 }
 
+// panic
 pub fn panic(
     msg: []const u8,
     error_return_trace: ?*std.builtin.StackTrace,
