@@ -20,6 +20,7 @@ pub fn build(b: *std.Build) void {
     b.installArtifact(exe);
 
     const run_cmd = b.addSystemCommand(&.{"qemu-system-riscv32"});
+    run_cmd.step.dependOn(b.getInstallStep());
     run_cmd.addArgs(&.{ "-machine", "virt", "-bios", "default", "-nographic", "-serial", "mon:stdio", "--no-reboot", "-kernel" });
 
     run_cmd.addArtifactArg(exe);
