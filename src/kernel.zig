@@ -4,17 +4,47 @@ const bss = @extern([*]u8, .{ .name = "__bss" }); // variable defined in the lin
 const bss_end = @extern([*]u8, .{ .name = "__bss_end" });
 const stack_top = @extern([*]u8, .{ .name = "__stack_top" });
 
+const ram_start = @extern([*]u8, .{ .name = "__free_ram" });
+const ram_end = @extern([*]u8, .{ .name = "__free_ram_end" });
+
+const page_size = 4096;
+var used_mem: usize = 0;
+
+fn allocPages(pages: usize) []u8 {
+    const ram = ram_start[0 .. @intFromPtr(ram_end) - @intFromPtr(ram_start)];
+    const alloc_size = pages * page_size;
+    if (used_mem + alloc_size > ram.len) {
+        @panic("alloc: out of memory");
+    }
+    const result = ram[used_mem..alloc_size];
+    used_mem += alloc_size;
+
+    @memset(result, 0);
+    return result;
+}
+
 export fn kernel_main() noreturn {
+    // bubble up all errors from main and collect errors here
+    main() catch |err| std.debug.panic("{s}", .{@errorName(err)});
+    while (true) asm volatile ("wfi");
+}
+fn main() !void {
     const bss_len = bss_end - bss;
     @memset(bss[0..bss_len], 0);
 
     const hello = "Hello Kernel!\n";
-    console.print("{s}", .{hello}) catch {};
+    try console.print("{s}", .{hello});
 
-    write_csr("stvec", @intFromPtr(&kernel_entry));
-    asm volatile ("unimp");
+    {
+        write_csr("stvec", @intFromPtr(&kernel_entry));
+        // uncommented to avoid triggering a cpu exeption
+        // asm volatile ("unimp");
+    }
 
-    while (true) asm volatile ("wfi");
+    const one = allocPages(1);
+    const two = allocPages(2);
+
+    try console.print("one: {*} ({}), two: {*} ({})", .{ one.ptr, one.len, two.ptr, two.len });
 }
 
 // panic
