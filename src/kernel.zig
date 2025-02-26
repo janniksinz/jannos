@@ -25,9 +25,11 @@ fn allocPages(pages: usize) []u8 {
 
 export fn kernel_main() noreturn {
     // bubble up all errors from main and collect errors here
+    // this separates the "c" part of the code from the zig code
     main() catch |err| std.debug.panic("{s}", .{@errorName(err)});
     while (true) asm volatile ("wfi");
 }
+
 fn main() !void {
     const bss_len = bss_end - bss;
     @memset(bss[0..bss_len], 0);
